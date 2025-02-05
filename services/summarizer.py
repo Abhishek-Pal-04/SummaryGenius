@@ -13,23 +13,34 @@ class OllamaClient:
         self.base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
         self.model = os.environ.get("OLLAMA_MODEL", "deepseek-coder:1.5b")
 
-    def generate(self, prompt):
-        """Generate text using Ollama API"""
+    def generate_stream(self, prompt):
+        """Generate text using Ollama API with streaming"""
         try:
             response = requests.post(
                 f"{self.base_url}/api/generate",
                 json={
                     "model": self.model,
                     "prompt": prompt,
-                    "stream": False
+                    "stream": True
                 },
-                timeout=30
+                stream=True,
+                timeout=120  # Increased timeout to 2 minutes
             )
             response.raise_for_status()
-            return response.json().get('response', '')
+
+            for line in response.iter_lines():
+                if line:
+                    try:
+                        json_response = json.loads(line)
+                        if 'response' in json_response:
+                            yield json_response['response']
+                    except json.JSONDecodeError:
+                        logging.error("Failed to decode JSON response")
+                        continue
+
         except Exception as e:
             logging.error(f"Ollama API error: {str(e)}")
-            return None
+            yield None
 
 def extract_keywords(text, num_keywords=5):
     """Extract main keywords from text"""
@@ -84,14 +95,8 @@ Text to summarize:
 
         # Initialize Ollama client and generate summary
         ollama = OllamaClient()
-        summary = ollama.generate(prompt)
-
-        if summary:
-            return summary
-        else:
-            logging.warning("Ollama summarization failed, using fallback")
-            return fallback_summary(transcript)
+        return ollama.generate_stream(prompt)
 
     except Exception as e:
         logging.warning(f"Summarization failed, using fallback: {str(e)}")
-        return fallback_summary(transcript)
+        return iter([fallback_summary(transcript)])
