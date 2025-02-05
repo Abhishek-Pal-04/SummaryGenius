@@ -1,19 +1,17 @@
 import os
 from openai import OpenAI
 
-# the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-# do not change this unless explicitly requested by the user
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 openai = OpenAI(api_key=OPENAI_API_KEY)
 
 def generate_summary(transcript):
-    """Generate a summary of the transcript using OpenAI's GPT-4o"""
+    """Generate a summary of the transcript using OpenAI's GPT-3.5-turbo"""
     # Combine transcript text
     full_text = " ".join([entry['text'] for entry in transcript])
-    
+
     try:
         response = openai.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-3.5-turbo",
             messages=[
                 {
                     "role": "system",
@@ -30,7 +28,7 @@ def generate_summary(transcript):
             ],
             max_tokens=1000
         )
-        
+
         return response.choices[0].message.content
     except Exception as e:
         raise Exception(f"Failed to generate summary: {str(e)}")
