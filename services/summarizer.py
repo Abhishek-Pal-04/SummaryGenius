@@ -1,42 +1,57 @@
 import os
 import re
-from collections import Counter
-from openai import OpenAI
+import json
 import logging
+import requests
+from collections import Counter
 
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-openai = OpenAI(api_key=OPENAI_API_KEY)
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
+class OllamaClient:
+    def __init__(self):
+        self.base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+        self.model = os.environ.get("OLLAMA_MODEL", "deepseek-coder:1.5b")
+
+    def generate(self, prompt):
+        """Generate text using Ollama API"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/generate",
+                json={
+                    "model": self.model,
+                    "prompt": prompt,
+                    "stream": False
+                },
+                timeout=30
+            )
+            response.raise_for_status()
+            return response.json().get('response', '')
+        except Exception as e:
+            logging.error(f"Ollama API error: {str(e)}")
+            return None
 
 def extract_keywords(text, num_keywords=5):
     """Extract main keywords from text"""
-    # Remove common words and symbols
     words = re.findall(r'\w+', text.lower())
     common_words = {'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i', 'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at'}
     words = [word for word in words if word not in common_words and len(word) > 3]
     return [word for word, _ in Counter(words).most_common(num_keywords)]
 
 def fallback_summary(transcript):
-    """Generate a basic summary when OpenAI is unavailable"""
-    # Combine all text
+    """Generate a basic summary when Ollama is unavailable"""
     full_text = " ".join([entry['text'] for entry in transcript])
-
-    # Extract keywords
     keywords = extract_keywords(full_text)
-
-    # Split into sentences
     sentences = re.split(r'[.!?]+', full_text)
     sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
 
-    # Score sentences based on keyword presence
     sentence_scores = []
     for sentence in sentences:
         score = sum(1 for keyword in keywords if keyword in sentence.lower())
         sentence_scores.append((score, sentence))
 
-    # Select top sentences
     top_sentences = sorted(sentence_scores, reverse=True)[:3]
 
-    # Format the summary
     summary = "# Summary\n\n"
     summary += "## Main Points\n"
     for _, sentence in top_sentences:
@@ -51,29 +66,32 @@ def fallback_summary(transcript):
     return summary
 
 def generate_summary(transcript):
-    """Generate a summary of the transcript, falling back to basic summarization if OpenAI fails"""
+    """Generate a summary of the transcript using Ollama, falling back to basic summarization if needed"""
     try:
-        # Try OpenAI first
         full_text = " ".join([entry['text'] for entry in transcript])
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an expert summarizer. Create a structured summary with: "
-                    "1. Main Points (3-5 bullet points) "
-                    "2. Key Takeaways "
-                    "3. Brief Overview "
-                    "Format the response in markdown."
-                },
-                {
-                    "role": "user",
-                    "content": f"Summarize this transcript:\n\n{full_text}"
-                }
-            ],
-            max_tokens=1000
-        )
-        return response.choices[0].message.content
+
+        # Create the prompt for the model
+        prompt = """Please create a structured summary of the following text with:
+1. Main Points (3-5 bullet points)
+2. Key Takeaways
+3. Brief Overview
+
+Format the response in markdown.
+
+Text to summarize:
+
+{text}""".format(text=full_text)
+
+        # Initialize Ollama client and generate summary
+        ollama = OllamaClient()
+        summary = ollama.generate(prompt)
+
+        if summary:
+            return summary
+        else:
+            logging.warning("Ollama summarization failed, using fallback")
+            return fallback_summary(transcript)
+
     except Exception as e:
-        logging.warning(f"OpenAI summarization failed, using fallback: {str(e)}")
+        logging.warning(f"Summarization failed, using fallback: {str(e)}")
         return fallback_summary(transcript)
