@@ -1,0 +1,60 @@
+/* Custom styles to complement Bootstrap dark theme */
+.transcript-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.timestamp {
+    color: var(--bs-info);
+    font-family: monospace;
+    min-width: 70px;
+    display: inline-block;
+}
+
+.loading-spinner {
+    display: none;
+}
+
+.history-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.history-item:hover {
+    background-color: var(--bs-gray-800) !important;
+}
+
+.error-message {
+    display: none;
+    color: var(--bs-danger);
+}
+
+/* Custom scrollbar for transcript container */
+.transcript-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.transcript-container::-webkit-scrollbar-track {
+    background: var(--bs-gray-800);
+}
+
+.transcript-container::-webkit-scrollbar-thumb {
+    background: var(--bs-gray-600);
+    border-radius: 4px;
+}
+
+.transcript-container::-webkit-scrollbar-thumb:hover {
+    background: var(--bs-gray-500);
+}
+
+/* Markdown styling */
+.summary-content h1,
+.summary-content h2,
+.summary-content h3 {
+    color: var(--bs-info);
+    margin-top: 1rem;
+}
+
+.summary-content ul {
+    padding-left: 1.5rem;
+}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Transcript Summarizer</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="text-center mb-4">YouTube Transcript Summarizer</h1>
+                <form id="url-form" class="mb-4">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="video-url" 
+                               placeholder="Enter YouTube URL" required>
+                        <button class="btn btn-info" type="submit">
+                            Fetch & Summarize
+                        </button>
+                    </div>
+                </form>
+                <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+                <div id="loading-spinner" class="text-center" style="display: none;">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="summary-container">
+                            <p class="text-muted">Summary will appear here...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Transcript</h5>
+                    </div>
+                    <div class="card-body transcript-container">
+                        <div id="transcript-container">
+                            <p class="text-muted">Transcript will appear here...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">History</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="history-container">
+                            <p class="text-muted p-3">No history yet...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
